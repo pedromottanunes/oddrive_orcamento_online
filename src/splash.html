@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carregando...</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 500px;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1173d4 0%, #0d5aa8 100%);
+      font-family: 'Work Sans', 'Segoe UI', sans-serif;
+      color: white;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+    
+    /* Simplified static splash styles to avoid animations that may trigger GPU issues */
+    /* Video fills the splash window */
+    #splash-video {
+      width: 80%;
+      height: 300%;
+      object-fit: cover; /* fill while keeping aspect */
+      display: block;
+      background: linear-gradient(135deg, #1173d4 0%, #0d5aa8 100%);
+    }
+
+    /* fallback overlay for browsers that cannot play video */
+    .logo {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 2;
+    }
+
+    .loading-text {
+      position: absolute;
+      bottom: 28px;
+      left: 24px;
+      font-size: 14px;
+      color: white;
+      z-index: 2;
+    }
+    
+    /* removed keyframe animations to reduce GPU usage and prevent renderer instability */
+  </style>
+</head>
+<body>
+  <!-- Video splash: use ../public/splash.mp4 (place file in project/public) -->
+  <video id="splash-video" autoplay muted loop playsinline>
+    <source src="../public/splash.mp4" type="video/mp4">
+    <!-- fallback content -->
+    <div class="logo">OD DRIVE</div>
+    <div class="loading-text">Carregando sistema de orçamentos...</div>
+  </video>
+</body>
+</html>

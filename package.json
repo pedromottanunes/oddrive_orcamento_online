@@ -1,0 +1,64 @@
+{
+  "name": "gerador-orcamentos-od-drive",
+  "version": "1.0.0",
+  "description": "Sistema desktop para geração de propostas comerciais - OD Drive",
+  "main": "main.js",
+  "author": "OD Drive",
+  "license": "PROPRIETARY",
+  "scripts": {
+    "dev": "set NODE_ENV=development && electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac dmg zip",
+    "package": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.oddrive.geradororcamentos",
+    "productName": "OD Drive - Gerador de Orçamentos",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.business",
+      "icon": "public/icon.icns"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OD Drive - Orçamentos"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "public/**/*",
+      "templates/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "public",
+      "output": "dist"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "electron-store": "^8.1.0",
+    "form-data": "^4.0.0",
+    "sharp": "^0.33.2"
+  },
+  "devDependencies": {
+    "electron": "^27.1.0",
+    "electron-builder": "^24.9.1"
+  }
+}

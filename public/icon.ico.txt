@@ -1,0 +1,18 @@
+# Ícone Placeholder
+
+Este arquivo serve como placeholder para o ícone da aplicação.
+
+Para adicionar um ícone real:
+1. Crie ou obtenha um arquivo .ico (256x256 ou 512x512)
+2. Substitua este arquivo por: `public/icon.ico`
+3. O ícone aparecerá na janela do aplicativo e no instalador
+
+Ferramentas para criar ícones:
+- https://www.icoconverter.com/
+- https://favicon.io/
+- https://www.figma.com/ (exportar como PNG e converter)
+
+Requisitos:
+- Formato: .ico (Windows)
+- Tamanho recomendado: 256x256 ou 512x512 pixels
+- Transparência: opcional
