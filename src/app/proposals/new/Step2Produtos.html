@@ -30,10 +30,16 @@
     }
 
     .wizard-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary, #1173d4);
+      width: 160px;
+      height: 42px;
+      background-image: url('../../../../public/brand/logo-dev.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      text-indent: -9999px;
+      overflow: hidden;
       margin-bottom: 32px;
+      display: block;
     }
 
     .wizard-steps {
@@ -357,35 +363,35 @@
 
       <div class="products-grid" id="products-grid">
         <div class="product-card" data-product="od-in">
-          <div class="product-card-check">✓</div>
+          <div class="product-card-check"></div>
           <div class="product-card-icon">01</div>
           <div class="product-card-name">OD IN</div>
           <div class="product-card-desc">M?dia interna instalada em dois pontos do interior do ve?culo.</div>
         </div>
 
         <div class="product-card" data-product="od-vt">
-          <div class="product-card-check">✓</div>
+          <div class="product-card-check"></div>
           <div class="product-card-icon">02</div>
           <div class="product-card-name">OD VT</div>
           <div class="product-card-desc">M?dia externa instalada no vidro traseiro do ve?culo.</div>
         </div>
 
         <div class="product-card" data-product="od-drop">
-          <div class="product-card-check">✓</div>
+          <div class="product-card-check"></div>
           <div class="product-card-icon">03</div>
           <div class="product-card-name">OD DROP</div>
           <div class="product-card-desc">M?dia externa nas quatro portas + vidro traseiro.</div>
         </div>
 
         <div class="product-card" data-product="od-pack">
-          <div class="product-card-check">✓</div>
+          <div class="product-card-check"></div>
           <div class="product-card-icon">04</div>
           <div class="product-card-name">OD PACK</div>
           <div class="product-card-desc">Quatro portas + vidro traseiro com kits combinados.</div>
         </div>
 
         <div class="product-card" data-product="od-full">
-          <div class="product-card-check">✓</div>
+          <div class="product-card-check"></div>
           <div class="product-card-icon">05</div>
           <div class="product-card-name">OD FULL</div>
           <div class="product-card-desc">Cobertura completa: portas, vidro traseiro e cap?.</div>
@@ -393,11 +399,11 @@
     </div>
 
     <div class="wizard-footer">
-      <button type="button" class="btn btn-secondary" id="btn-back">← Voltar</button>
+      <button type="button" class="btn btn-secondary" id="btn-back"> Voltar</button>
       <div class="wizard-actions">
         <span class="selection-info" id="selection-info">Selecione pelo menos 1 produto</span>
-        <button type="button" class="btn btn-secondary" id="btn-save-draft">💾 Salvar Rascunho</button>
-        <button type="button" class="btn btn-primary" id="btn-next" disabled>Próximo: Uploads →</button>
+        <button type="button" class="btn btn-secondary" id="btn-save-draft"> Salvar Rascunho</button>
+        <button type="button" class="btn btn-primary" id="btn-next" disabled>Próximo: Uploads </button>
       </div>
     </div>
   </div>

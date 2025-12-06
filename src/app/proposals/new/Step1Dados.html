@@ -30,10 +30,16 @@
     }
 
     .wizard-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary, #1173d4);
+      width: 160px;
+      height: 42px;
+      background-image: url('../../../../public/brand/logo-dev.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      text-indent: -9999px;
+      overflow: hidden;
       margin-bottom: 32px;
+      display: block;
     }
 
     .wizard-steps {
@@ -449,11 +455,11 @@
           <span class="planilha-label">Como você deseja incluir a planilha?</span>
           <label class="planilha-option">
             <input type="radio" name="tipoPlanilha" value="imagem" checked>
-            <span>📄 Carregar imagem da planilha</span>
+            <span> Carregar imagem da planilha</span>
           </label>
           <label class="planilha-option">
             <input type="radio" name="tipoPlanilha" value="editar">
-            <span>✏️ Criar/editar planilha no programa</span>
+            <span>️ Criar/editar planilha no programa</span>
           </label>
         </div>
       </div>
@@ -526,10 +532,10 @@
     </div>
 
     <div class="wizard-footer">
-      <button type="button" class="btn btn-secondary" id="btn-back">← Voltar</button>
+      <button type="button" class="btn btn-secondary" id="btn-back"> Voltar</button>
       <div class="wizard-actions">
-        <button type="button" class="btn btn-secondary" id="btn-save-draft">💾 Salvar Rascunho</button>
-        <button type="button" class="btn btn-primary" id="btn-next">Próximo: Produtos →</button>
+        <button type="button" class="btn btn-secondary" id="btn-save-draft"> Salvar Rascunho</button>
+        <button type="button" class="btn btn-primary" id="btn-next">Próximo: Produtos </button>
       </div>
     </div>
   </div>

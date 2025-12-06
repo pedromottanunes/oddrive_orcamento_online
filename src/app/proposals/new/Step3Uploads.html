@@ -30,10 +30,16 @@
     }
 
     .wizard-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary, #1173d4);
+      width: 160px;
+      height: 42px;
+      background-image: url('../../../../public/brand/logo-dev.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      text-indent: -9999px;
+      overflow: hidden;
       margin-bottom: 32px;
+      display: block;
     }
 
     .wizard-steps {
@@ -379,54 +385,54 @@
 
       <div class="uploads-grid" id="uploads-grid">
         <div class="upload-card" data-slot="logo">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">🏢</div>
+          <div class="upload-card-icon"></div>
           <div class="upload-card-label">Logo do Anunciante</div>
           <div class="upload-card-hint">PNG, JPG ou SVG</div>
           <div class="upload-card-filename"></div>
         </div>
 
         <div class="upload-card" data-slot="mock-lateral">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">🚗</div>
+          <div class="upload-card-icon"></div>
           <div class="upload-card-label">Mock Lateral (Carro)</div>
           <div class="upload-card-hint">PNG ou JPG</div>
           <div class="upload-card-filename"></div>
         </div>
 
         <div class="upload-card" data-slot="mock-mapa">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">🖼️</div>
+          <div class="upload-card-icon">️</div>
           <div class="upload-card-label">Mock Frontal</div>
           <div class="upload-card-hint">PNG ou JPG</div>
           <div class="upload-card-filename"></div>
         </div>
 
         <div class="upload-card" data-slot="odim">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">🖼️</div>
+          <div class="upload-card-icon">️</div>
           <div class="upload-card-label">OD IN</div>
           <div class="upload-card-hint">PNG ou JPG</div>
           <div class="upload-card-filename"></div>
         </div>
 
         <div class="upload-card" data-slot="mock-traseiro">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">🚗</div>
+          <div class="upload-card-icon"></div>
           <div class="upload-card-label">Mock Traseiro</div>
           <div class="upload-card-hint">PNG ou JPG</div>
           <div class="upload-card-filename"></div>
         </div>
 
         <div class="upload-card" data-slot="planilha">
-          <div class="upload-card-remove" title="Remover">×</div>
+          <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
-          <div class="upload-card-icon">📊</div>
+          <div class="upload-card-icon"></div>
           <div class="upload-card-label">Planilha de Orçamento</div>
           <div class="upload-card-hint">PNG ou JPG (screenshot)</div>
           <div class="upload-card-filename"></div>
@@ -438,11 +444,11 @@
     </div>
 
     <div class="wizard-footer">
-      <button type="button" class="btn btn-secondary" id="btn-back">← Voltar</button>
+      <button type="button" class="btn btn-secondary" id="btn-back"> Voltar</button>
       <div class="wizard-actions">
         <span class="upload-info" id="upload-info">0 / 6 imagens enviadas</span>
-        <button type="button" class="btn btn-secondary" id="btn-save-draft">💾 Salvar Rascunho</button>
-        <button type="button" class="btn btn-primary" id="btn-next">Próximo: Checagem →</button>
+        <button type="button" class="btn btn-secondary" id="btn-save-draft"> Salvar Rascunho</button>
+        <button type="button" class="btn btn-primary" id="btn-next">Próximo: Checagem </button>
       </div>
     </div>
   </div>

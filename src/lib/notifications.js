@@ -85,6 +85,94 @@ class NotificationSystem {
 
 // Sistema de Modal Customizado
 class ModalSystem {
+  constructor() {
+    this.ensureStylesInjected();
+  }
+
+  ensureStylesInjected() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('od-modal-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'od-modal-styles';
+    style.textContent = `
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 15, 26, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        animation: od-modal-fade-in 0.2s ease-out;
+      }
+
+      .modal-overlay .modal {
+        width: min(500px, calc(100vw - 48px));
+        background: var(--surface, #ffffff);
+        border-radius: var(--radius-lg, 16px);
+        box-shadow: 0 20px 40px rgba(6, 25, 56, 0.2);
+        display: flex;
+        flex-direction: column;
+        animation: od-modal-pop 0.25s ease-out;
+      }
+
+      .modal-overlay .modal-header,
+      .modal-overlay .modal-footer {
+        padding: 20px 24px;
+      }
+
+      .modal-overlay .modal-header {
+        border-bottom: 1px solid var(--line, #e3e5e8);
+      }
+
+      .modal-overlay .modal-body {
+        padding: 24px;
+      }
+
+      .modal-overlay .modal-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary, #1a1d23);
+      }
+
+      .modal-overlay .modal-text {
+        margin: 0;
+        font-size: 15px;
+        color: var(--text-secondary, #5e6470);
+        line-height: 1.5;
+      }
+
+      .modal-overlay .modal-footer {
+        border-top: 1px solid var(--line, #e3e5e8);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      @keyframes od-modal-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes od-modal-pop {
+        from {
+          opacity: 0;
+          transform: translateY(-12px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   show(options) {
     const {
       title = 'Atenção',

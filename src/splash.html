@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -40,11 +40,17 @@
       position: absolute;
       top: 24px;
       left: 24px;
-      font-size: 28px;
-      font-weight: 700;
-      color: white;
-      text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      width: 120px;
+      height: 120px;
       z-index: 2;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }
 
     .loading-text {
@@ -60,12 +66,13 @@
   </style>
 </head>
 <body>
+  <div class="logo">
+    <img src="../public/brand/logo-dev.png" alt="OD Drive">
+  </div>
   <!-- Video splash: use ../public/splash.mp4 (place file in project/public) -->
   <video id="splash-video" autoplay muted loop playsinline>
     <source src="../public/splash.mp4" type="video/mp4">
-    <!-- fallback content -->
-    <div class="logo">OD DRIVE</div>
-    <div class="loading-text">Carregando sistema de orçamentos...</div>
   </video>
+  <div class="loading-text">Carregando sistema de orçamentos...</div>
 </body>
 </html>

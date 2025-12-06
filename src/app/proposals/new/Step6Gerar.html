@@ -30,10 +30,16 @@
     }
 
     .wizard-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary, #1173d4);
+      width: 160px;
+      height: 42px;
+      background-image: url('../../../../public/brand/logo-dev.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      text-indent: -9999px;
+      overflow: hidden;
       margin-bottom: 32px;
+      display: block;
     }
 
     .wizard-steps {
@@ -376,7 +382,7 @@
       </div>
 
       <div class="generate-card" id="generate-card">
-        <div class="generate-icon" id="generate-icon">🚀</div>
+        <div class="generate-icon" id="generate-icon"></div>
         <div class="generate-title" id="generate-title">Pronto para gerar</div>
         <div class="generate-subtitle" id="generate-subtitle">Clique no botão abaixo para criar a apresentação no Google Slides.</div>
         
@@ -392,30 +398,30 @@
         
         <div class="generate-actions" id="generate-actions">
           <button class="generate-btn" id="btn-generate">
-            🚀 Gerar apresentação
+             Gerar apresentação
           </button>
           <button class="generate-btn generate-btn-secondary" id="btn-generate-pdf" style="display: none;">
-            📄 Gerar PDF final
+             Gerar PDF final
           </button>
         </div>
         <div class="pdf-actions" id="pdf-actions" style="display: none;">
           <button class="generate-btn" id="btn-open-pdf">
-            📂 Abrir PDF
+             Abrir PDF
           </button>
           <button class="generate-btn generate-btn-secondary" id="btn-open-folder">
-            🗂️ Abrir Pasta
+            ️ Abrir Pasta
           </button>
           <button class="generate-btn generate-btn-secondary" id="btn-new-proposal">
-            ➕ Nova Proposta
+             Nova Proposta
           </button>
         </div>
       </div>
     </div>
 
     <div class="wizard-footer">
-      <button type="button" class="btn btn-secondary" id="btn-back">← Voltar</button>
+      <button type="button" class="btn btn-secondary" id="btn-back"> Voltar</button>
       <div class="wizard-actions">
-        <button type="button" class="btn btn-primary" id="btn-finish" style="display: none;">✓ Concluir e Voltar ao Início</button>
+        <button type="button" class="btn btn-primary" id="btn-finish" style="display: none;"> Concluir e Voltar ao Início</button>
       </div>
     </div>
   </div>

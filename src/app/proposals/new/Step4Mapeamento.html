@@ -30,10 +30,16 @@
     }
 
     .wizard-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary, #1173d4);
+      width: 160px;
+      height: 42px;
+      background-image: url('../../../../public/brand/logo-dev.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      text-indent: -9999px;
+      overflow: hidden;
       margin-bottom: 32px;
+      display: block;
     }
 
     .wizard-steps {
@@ -369,10 +375,10 @@
     </div>
 
     <div class="wizard-footer">
-      <button type="button" class="btn btn-secondary" id="btn-back">← Voltar</button>
+      <button type="button" class="btn btn-secondary" id="btn-back"> Voltar</button>
       <div class="wizard-actions">
-        <button type="button" class="btn btn-secondary" id="btn-save-draft">💾 Salvar Rascunho</button>
-        <button type="button" class="btn btn-primary" id="btn-next" disabled>Próximo: Gerar PDF →</button>
+        <button type="button" class="btn btn-secondary" id="btn-save-draft"> Salvar Rascunho</button>
+        <button type="button" class="btn btn-primary" id="btn-next" disabled>Próximo: Gerar PDF </button>
       </div>
     </div>
   </div>
