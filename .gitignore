@@ -11,11 +11,14 @@ build/
 # Runtime generated files
 tmp/
 data/
+!server/data/
+!server/data/app-data.json
 *.log
 *.log.*
 
 # Environment & secrets
 .env
+.env1
 .env.local
 .env.*.local
 PARAMETROS SECRETOS/
