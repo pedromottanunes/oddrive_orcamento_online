@@ -1,5 +1,25 @@
 # 📋 RESUMO - Projeto Preparado para GitHub e Deploy
 
+## 🩹 Atualização 2025-12-09 — Deduplicação de propostas
+
+- Corrigido fluxo que gerava cartões duplicados (rascunho + gerado) quando a mesma proposta era salva novamente.
+- `Step6Gerar.js`: `saveProposal` agora atualiza se já existir `proposalData.id` ou `editing_proposal_id`, evitando criar um segundo registro.
+- `main.js`: Store deduplica por `id` ao listar e, no create, substitui qualquer entrada existente com o mesmo `id`, mantendo só a versão mais recente.
+
+### 🩹 Atualização 2025-12-09 — Placeholder {{planilha}}
+
+- Quando o usuário escolhe “criar/editar planilha”, o base64 da planilha agora fica preservado no draft (Step3B e Step3Uploads), garantindo que o generator receba `uploads.planilha.data` mesmo se o cache IndexedDB não estiver disponível.
+- Esperado: o placeholder `{{planilha}}` passa a ser substituído pela imagem capturada no Slides.
+
+### Como testar rapidamente (desktop/Electron)
+1) Abrir o app → criar nova proposta → avançar até gerar slides (sem duplicar uploads).
+2) Voltar ao início do app: deve aparecer apenas **1** cartão para essa proposta.
+3) Exportar PDF a partir do Step6: confirmar que continua apenas **1** cartão.
+4) Excluir pelo card: somente aquele item deve sumir; nenhum card “espelho” deve permanecer.
+5) (Opcional) Reabrir o app: a lista permanece deduplicada.
+
+Se ainda vir duplicados, envie um print e, se possível, o conteúdo do `config.json` do electron-store para inspeção.
+
 ## ✅ O que foi feito
 
 ### 1. Segurança e Versionamento

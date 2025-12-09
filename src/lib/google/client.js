@@ -41,12 +41,22 @@ class GoogleSlidesClient {
 
   async batchUpdate(presentationId, requests) {
     if (!requests || !requests.length) return null;
-
-    const response = await this.slides.post(
-      `/presentations/${presentationId}:batchUpdate`,
-      { requests }
-    );
-    return response.data;
+    try {
+      const response = await this.slides.post(
+        `/presentations/${presentationId}:batchUpdate`,
+        { requests }
+      );
+      return response.data;
+    } catch (error) {
+      // Log detailed Google error payload when available
+      const respData = error?.response?.data;
+      console.error('[GoogleSlidesClient] batchUpdate failed:', respData || error?.message || error);
+      // Throw a clearer error including the response payload
+      const message = respData ? `Google Slides API error: ${JSON.stringify(respData)}` : (error.message || 'Unknown Slides error');
+      const err = new Error(message);
+      err.original = error;
+      throw err;
+    }
   }
 
   async exportPresentationPdf(presentationId) {

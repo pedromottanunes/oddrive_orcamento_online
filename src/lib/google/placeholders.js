@@ -19,11 +19,8 @@ module.exports = {
     { token: '{{mock_lateral_transparente}}', uploadKey: 'mock-lateral', description: 'Mock lateral como marca d\'agua', opacity: 0.2 },
     { token: '{{mock_mapa}}', uploadKey: 'mock-mapa', description: 'Mock Mapa' },
     { token: '{{mock_mapa_transparente}}', uploadKey: 'mock-mapa', description: 'Mock mapa como marca d\'agua', opacity: 0.2 },
-    { token: '{{rotas}}', uploadKey: 'rotas', description: 'Rotas' },
-    { token: '{{odim}}', uploadKey: 'odim', description: 'ODIM' },
+    { token: '{{odim}}', uploadKey: 'odim', description: 'OD IM' },
     { token: '{{mock_traseiro}}', uploadKey: 'mock-traseiro', description: 'Mock Traseiro' },
-    { token: '{{planilha}}', uploadKey: 'planilha', description: 'Planilha de Orçamento' },
-    { token: '{{mockup_od_vt}}', uploadKey: 'mockup-od-vt', description: 'Mockup OD V/T' },
-    { token: '{{mockup_od_in}}', uploadKey: 'mockup-od-in', description: 'Mockup OD In' }
+    { token: '{{planilha}}', uploadKey: 'planilha', description: 'Planilha de Orçamento' }
   ]
 };

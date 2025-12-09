@@ -186,13 +186,21 @@ async function generateFinalPdf() {
     }
 
     await window.electronAPI.files.save({
+
       data: response.base64,
+
       fileName: response.fileName
+
     });
 
+
+
     proposalData.generatedPdfPath = null;
+
     proposalData.generatedPdfAvailable = true;
+
     proposalData.generatedPdfFileName = response.fileName;
+
     proposalData.status = 'completed';
     proposalData.generatedAt = new Date().toISOString();
 
@@ -214,16 +222,22 @@ async function saveProposal(options = {}) {
   if (!isElectron) return;
 
   try {
-    const editId = localStorage.getItem('editing_proposal_id');
+    // Preferir atualizar se estivermos editando ou já temos um `proposalData.id`.
+    const storedEditId = localStorage.getItem('editing_proposal_id');
+    const editId = storedEditId || proposalData.id || null;
     let saved;
 
     if (editId) {
+      // Atualiza a proposta existente (quando entramos pelo fluxo de edição
+      // ou quando já salvamos anteriormente e `proposalData.id` foi preenchido).
       saved = await window.electronAPI.proposals.update(editId, proposalData);
-      localStorage.removeItem('editing_proposal_id');
+      // Limpar a flag de edição caso exista
+      if (storedEditId) localStorage.removeItem('editing_proposal_id');
       if (!silent) {
         notify.success('Proposta atualizada', 'As alterações foram salvas com sucesso.');
       }
     } else {
+      // Criar nova proposta quando ainda não houver identificador
       saved = await window.electronAPI.proposals.create(proposalData);
       if (!silent) {
         notify.success('Proposta criada', 'Nova proposta registrada com sucesso.');
@@ -248,44 +262,84 @@ async function saveProposal(options = {}) {
 }
 
 async function openPDF() {
+
   try {
+
     if (!proposalData.googlePresentationId) {
+
       notify.warning('Link indisponível', 'Gere a apresentação e exporte o PDF primeiro.');
+
       return;
+
     }
+
+
 
     ui.status().textContent = 'Baixando PDF...';
+
     const response = await window.electronAPI.slides.exportPdf(proposalData.googlePresentationId, proposalData.id);
+
     if (!response?.success) {
+
       throw new Error(response?.error || 'Não foi possível baixar o PDF.');
+
     }
+
+
 
     await window.electronAPI.files.save({
+
       data: response.base64,
+
       fileName: response.fileName || proposalData.generatedPdfFileName || `proposta-${proposalData.id || Date.now()}.pdf`
+
     });
 
+
+
     notify.success('Download concluído', 'PDF baixado novamente.');
+
   } catch (error) {
+
     console.error('Erro ao baixar PDF:', error);
+
     notify.error('Erro', error.message || 'Não foi possível baixar o PDF.');
+
   } finally {
+
     ui.status().textContent = '';
+
   }
+
 }
 
+
+
 function openFolder() {
+
   try {
+
     if (proposalData.googlePresentationUrl) {
+
       window.open(proposalData.googlePresentationUrl, '_blank', 'noopener');
+
     } else {
+
       notify.warning('Link indisponível', 'Gere a apresentação primeiro.');
+
     }
+
   } catch (error) {
+
     console.error('Erro ao abrir apresentação:', error);
+
     notify.error('Erro', 'Não foi possível abrir o Google Slides.');
+
   }
+
 }
+
+
 
 function newProposal() {
   localStorage.removeItem('wizard_draft');

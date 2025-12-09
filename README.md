@@ -150,7 +150,7 @@ npm start
    - Captura via html2canvas e salva como upload
 
 4. **Step 3 - Uploads**
-   - 9 slots de imagem: logo, mocks laterais, mapa, rotas, ODIM, traseiro, planilha, mockups
+   - 7 slots de imagem: logo, mocks laterais, mapa, OD IN, traseiro e planilha
    - Validação de formato e tamanho
    - Armazenamento em base64
 

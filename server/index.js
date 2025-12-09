@@ -27,11 +27,41 @@ async function bootstrap() {
   app.use(express.json({ limit: '150mb' }));
   app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
-  app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+  const textExts = new Set(['.html', '.css', '.js', '.mjs', '.cjs', '.json', '.svg', '.txt', '.md']);
+  const defaultMimeByExt = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
+    '.cjs': 'application/javascript',
+    '.json': 'application/json',
+    '.svg': 'image/svg+xml',
+    '.txt': 'text/plain',
+    '.md': 'text/markdown'
+  };
+  const utf8StaticOptions = {
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      if (!textExts.has(ext)) return;
+      const currentType = res.getHeader('Content-Type');
+      if (typeof currentType === 'string' && currentType.length) {
+        if (!/charset=/i.test(currentType)) {
+          res.setHeader('Content-Type', `${currentType}; charset=utf-8`);
+        }
+      } else {
+        const fallback = defaultMimeByExt[ext];
+        if (fallback) {
+          res.setHeader('Content-Type', `${fallback}; charset=utf-8`);
+        }
+      }
+    }
+  };
+
+  app.use('/public', express.static(path.join(__dirname, '..', 'public'), utf8StaticOptions));
   app.use('/api', buildApiRouter(store, googleAuthService));
 
   const staticRoot = path.join(__dirname, '..', 'src');
-  app.use(express.static(staticRoot));
+  app.use(express.static(staticRoot, utf8StaticOptions));
 
   app.get('/', (req, res) => {
     res.redirect('/app/');

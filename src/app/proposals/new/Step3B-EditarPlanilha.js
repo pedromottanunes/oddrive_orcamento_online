@@ -11,9 +11,12 @@ function getPersistableDraft() {
     Object.keys(clone.uploads).forEach((slotId) => {
       const entry = clone.uploads[slotId];
       if (!entry) return;
-      delete entry.data;
-      delete entry.dataUrl;
-      delete entry.previewUrl;
+      const hasIndexedDb = Boolean(window.uploadCache?.isSupported);
+      if (hasIndexedDb) {
+        delete entry.data;
+        delete entry.dataUrl;
+        delete entry.previewUrl;
+      }
     });
   }
 
@@ -35,6 +38,18 @@ function loadDraftData() {
     const savedData = localStorage.getItem('wizard_draft');
     if (savedData) {
       proposalData = JSON.parse(savedData);
+      
+      // Limpar qualquer upload de planilha anterior — quando entramos no Step3B
+      // significa que o usuário escolheu criar/editar, então qualquer imagem
+      // carregada previamente deve ser descartada.
+      if (proposalData.uploads && proposalData.uploads['planilha']) {
+        delete proposalData.uploads['planilha'];
+        
+        // Limpar também do uploadCache (IndexedDB)
+        if (window.uploadCache?.remove) {
+          window.uploadCache.remove('planilha').catch(() => {});
+        }
+      }
     }
   } catch (error) {
     console.error('❌ Erro ao carregar rascunho:', error);
@@ -364,6 +379,14 @@ async function capturarEContinuar() {
     // Extrair apenas os dados base64 (sem o prefixo data:image/png;base64,)
     const base64Data = imagemBase64.split(',')[1];
     
+    console.log('[Step3B] Planilha capturada:', {
+      hasDataUrl: !!imagemBase64,
+      dataUrlLength: imagemBase64?.length || 0,
+      hasBase64Data: !!base64Data,
+      base64Length: base64Data?.length || 0,
+      sample: base64Data?.substring(0, 50)
+    });
+    
     // Salvar no proposalData como se fosse upload, no formato esperado pelo generator
     if (!proposalData.uploads) {
       proposalData.uploads = {};
@@ -374,10 +397,29 @@ async function capturarEContinuar() {
       name: 'planilha-orcamento.png',
       type: 'image/png',
       size: base64Data.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      dataUrl: imagemBase64
     };
-    
-    // Salvar todo o estado
+
+    // Persistir no uploadCache (IndexedDB) para que a Step3Uploads recupere
+    try {
+      if (base64Data && window.uploadCache?.save) {
+        console.log('[Step3B] Salvando planilha no uploadCache...');
+        await window.uploadCache.save('planilha', { data: base64Data, dataUrl: imagemBase64 });
+        // Marca que este upload já foi persistido no cache para que os sanitizers
+        // não removam o blob do rascunho salvo em localStorage.
+        if (!proposalData.uploads) proposalData.uploads = {};
+        if (!proposalData.uploads['planilha']) proposalData.uploads['planilha'] = {};
+        proposalData.uploads['planilha']._cached = true;
+        console.log('[Step3B] Planilha salva no uploadCache com sucesso');
+      } else {
+        console.warn('[Step3B] Não foi possível salvar: base64Data ou uploadCache não disponível');
+      }
+    } catch (err) {
+      console.warn('[Step3B] Falha ao salvar planilha no uploadCache', err);
+    }
+
+    // Salvar todo o estado (sem os dados pesados, conforme sanitize)
     localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
     
     showNotification('✅ Planilha capturada com sucesso!', 'success');
@@ -435,7 +477,8 @@ function showNotification(message, type = 'info') {
 }
 
 async function gerarImagemPlanilha(container) {
-  const scale = 4;
+  // Captura em altíssima resolução para melhor nitidez no Slides
+  const scale = 6;
   const rect = container.getBoundingClientRect();
   
   if (window.domtoimage) {
@@ -458,7 +501,8 @@ async function gerarImagemPlanilha(container) {
   }
 
   const canvas = await html2canvas(container, {
-    scale: Math.min(4, Math.max(2, window.devicePixelRatio || 1) * 2),
+    // Usa escala alta (teto 6) para máxima definição
+    scale: Math.min(6, Math.max(4, (window.devicePixelRatio || 1) * 4)),
     backgroundColor: '#ffffff',
     logging: false,
     useCORS: true,

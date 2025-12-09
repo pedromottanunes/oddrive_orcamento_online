@@ -29,8 +29,13 @@ module.exports = function buildSlidesRouter(store, googleAuthService) {
 
       res.json({ success: true, ...result, progress: progressTrail });
     } catch (error) {
-      console.error('[Slides] Falha na geraÇõÇœo:', error);
-      res.status(500).json({ success: false, error: error.message || 'Erro interno ao gerar proposta.' });
+      console.error('[Slides] Falha na geração:', error?.message || error, error?.stack);
+      res.status(500).json({
+        success: false,
+        error: error?.message || 'Erro interno ao gerar proposta.',
+        details: error?.response?.data || null,
+        status: error?.response?.status || null
+      });
     }
   });
 

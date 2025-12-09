@@ -84,22 +84,35 @@ class GoogleSlidesGenerator {
 
       // 3. Upload de imagens
       const imageUploads = proposalData.uploads || {};
+      console.log('[Google Slides] Debug - uploads keys:', Object.keys(imageUploads || {}));
       if (imagePlaceholders.length) {
         report(40, 'Enviando imagens para o Google Drive...');
       }
 
       for (const placeholder of imagePlaceholders) {
         const uploadData = imageUploads[placeholder.uploadKey];
-        if (!uploadData || !uploadData.data) {
-          console.warn(`[Google Slides] Upload não encontrado para ${placeholder.uploadKey}`);
-          continue;
-        }
+          if (!uploadData || !uploadData.data) {
+            console.warn(`[Google Slides] Upload não encontrado para ${placeholder.uploadKey}`);
+            continue;
+          }
+
+          // Debug: report short fingerprint to help trace which image was provided
+          try {
+            const sample = uploadData.data.slice(0, 40);
+            console.log(`[Google Slides] Found upload for ${placeholder.uploadKey} — data length=${uploadData.data.length}, sample=${sample}`);
+          } catch (err) {
+            console.warn('[Google Slides] Falha ao inspecionar uploadData for', placeholder.uploadKey, err && err.message);
+          }
 
         try {
           let buffer = Buffer.from(uploadData.data, 'base64');
 
           if (placeholder.opacity !== undefined && placeholder.opacity < 1) {
             buffer = await this.applyOpacity(buffer, placeholder.opacity);
+          }
+
+          if (placeholder.uploadKey === 'planilha') {
+            buffer = await this.ensureImageBounds(buffer, { maxWidth: 1920, maxHeight: 1080 });
           }
 
           const filename = this.buildImageFilename(uploadData.name, placeholder);
@@ -130,7 +143,21 @@ class GoogleSlidesGenerator {
 
       // 4. Aplicar atualizações
       report(55, 'Aplicando placeholders no Slides...');
-      await this.client.batchUpdate(presentationId, requests);
+      try {
+        console.log('[Google Slides] batchUpdate requests count:', requests.length);
+        try {
+          // print a small sample (no binary data expected here)
+          const sample = JSON.stringify(requests.slice(0, 6));
+          console.log('[Google Slides] batchUpdate sample:', sample.substring(0, 5000));
+        } catch (e) {
+          // ignore stringify errors
+        }
+        await this.client.batchUpdate(presentationId, requests);
+      } catch (err) {
+        // rethrow with context
+        console.error('[Google Slides] batchUpdate failed with error:', err.message || err);
+        throw err;
+      }
 
       let localPdfPath = null;
       if (exportPdf) {
@@ -155,8 +182,19 @@ class GoogleSlidesGenerator {
       report(100, 'Proposta gerada com sucesso!');
       return result;
     } catch (error) {
-      console.error('[Google Slides] Erro ao gerar proposta:', error);
-      throw error;
+      const status = error?.response?.status;
+      const apiMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro desconhecido ao gerar proposta';
+      const enriched = status ? `Google API ${status}: ${apiMessage}` : apiMessage;
+      console.error('[Google Slides] Erro ao gerar proposta:', enriched, error?.response?.data || error);
+      const err = new Error(enriched);
+      err.original = error;
+      err.details = error?.response?.data || null;
+      throw err;
     }
   }
 
@@ -329,6 +367,32 @@ class GoogleSlidesGenerator {
       .linear([1, 1, 1, opacity], [0, 0, 0, 0])
       .png()
       .toBuffer();
+  }
+
+  async ensureImageBounds(buffer, { maxWidth = 1920, maxHeight = 1080 } = {}) {
+    try {
+      const image = sharp(buffer);
+      const metadata = await image.metadata();
+      const needsResize =
+        (metadata.width && metadata.width > maxWidth) ||
+        (metadata.height && metadata.height > maxHeight);
+
+      if (needsResize) {
+        return image
+          .resize({
+            width: maxWidth,
+            height: maxHeight,
+            fit: 'inside',
+            withoutEnlargement: true
+          })
+          .png()
+          .toBuffer();
+      }
+    } catch (error) {
+      console.warn('[Google Slides] N?o foi poss?vel redimensionar imagem:', error.message);
+    }
+
+    return buffer;
   }
 
   ensureImpactMetrics(proposalData) {

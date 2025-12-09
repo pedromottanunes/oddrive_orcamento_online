@@ -92,9 +92,12 @@ function getDraftPayload() {
     Object.keys(clone.uploads).forEach((slotId) => {
       const entry = clone.uploads[slotId];
       if (!entry) return;
-      delete entry.data;
-      delete entry.dataUrl;
-      delete entry.previewUrl;
+      const hasIndexedDb = Boolean(window.uploadCache?.isSupported);
+      if (hasIndexedDb) {
+        delete entry.data;
+        delete entry.dataUrl;
+        delete entry.previewUrl;
+      }
     });
   }
   return clone;
@@ -102,7 +105,21 @@ function getDraftPayload() {
 
 function persistDraft() {
   const payload = getDraftPayload();
-  localStorage.setItem('wizard_draft', JSON.stringify(payload));
+  try {
+    localStorage.setItem('wizard_draft', JSON.stringify(payload));
+  } catch (error) {
+    console.warn('[Step3Uploads] Falha ao salvar draft, tentando sem blobs pesados', error);
+    // Fallback: limpa todos os blobs e tenta de novo
+    if (payload.uploads) {
+      Object.values(payload.uploads).forEach((entry) => {
+        if (!entry) return;
+        delete entry.data;
+        delete entry.dataUrl;
+        delete entry.previewUrl;
+      });
+    }
+    localStorage.setItem('wizard_draft', JSON.stringify(payload));
+  }
 }
 
 // Carregar dados salvos
@@ -126,8 +143,40 @@ async function loadDraftData() {
   proposalData.produtosSelecionados = proposalData.produtosSelecionados || [];
   proposalData.uploads = proposalData.uploads || {};
 
+  // Log antes de hidratar
+  console.log('[Step3Uploads] ANTES hydrateUploads - planilha:', {
+    exists: !!proposalData.uploads['planilha'],
+    hasData: !!(proposalData.uploads['planilha']?.data),
+    dataLength: proposalData.uploads['planilha']?.data?.length || 0,
+    hasDataUrl: !!(proposalData.uploads['planilha']?.dataUrl),
+    dataUrlLength: proposalData.uploads['planilha']?.dataUrl?.length || 0
+  });
+
   if (window.uploadCache?.hydrateUploads) {
     await window.uploadCache.hydrateUploads(proposalData.uploads);
+  }
+
+  // Log DEPOIS de hidratar
+  console.log('[Step3Uploads] DEPOIS hydrateUploads - planilha:', {
+    exists: !!proposalData.uploads['planilha'],
+    hasData: !!(proposalData.uploads['planilha']?.data),
+    dataLength: proposalData.uploads['planilha']?.data?.length || 0,
+    hasDataUrl: !!(proposalData.uploads['planilha']?.dataUrl),
+    dataUrlLength: proposalData.uploads['planilha']?.dataUrl?.length || 0
+  });
+
+  // CRÍTICO: Se planilha não tem data mas tem dataUrl, recuperar
+  if (proposalData.uploads['planilha']) {
+    const planilha = proposalData.uploads['planilha'];
+    if ((!planilha.data || planilha.data.length === 0) && planilha.dataUrl) {
+      console.warn('[Step3Uploads] planilha.data vazio - recuperando de dataUrl');
+      const parts = planilha.dataUrl.split(',');
+      if (parts.length === 2) {
+        planilha.data = parts[1];
+        planilha.size = planilha.data.length;
+        console.log('[Step3Uploads] planilha.data recuperado - novo length:', planilha.data.length);
+      }
+    }
   }
 }
 

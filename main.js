@@ -61,9 +61,39 @@ function createMainWindow() {
   });
 }
 
+function dedupeProposals(list = []) {
+  // Mantém a última ocorrência de cada id (mais recente fica)
+  const seen = new Set();
+  const result = [];
+  let changed = false;
+
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const proposal = list[i];
+    if (!proposal || !proposal.id) {
+      changed = true;
+      continue;
+    }
+
+    if (seen.has(proposal.id)) {
+      changed = true;
+      continue;
+    }
+
+    seen.add(proposal.id);
+    result.unshift(proposal);
+  }
+
+  return { list: result, changed };
+}
+
 // CRUD de propostas
 ipcMain.handle('proposals:list', () => {
-  return store.get('proposals', []);
+  const stored = store.get('proposals', []);
+  const { list, changed } = dedupeProposals(stored);
+  if (changed) {
+    store.set('proposals', list);
+  }
+  return list;
 });
 
 ipcMain.handle('proposals:get', (event, id) => {
@@ -73,12 +103,17 @@ ipcMain.handle('proposals:get', (event, id) => {
 
 ipcMain.handle('proposals:create', (event, proposal) => {
   const proposals = store.get('proposals', []);
-  proposal.id = Date.now().toString();
-  proposal.createdAt = new Date().toISOString();
-  proposal.updatedAt = proposal.createdAt;
+
+  proposal.id = proposal.id || Date.now().toString();
+  proposal.createdAt = proposal.createdAt || new Date().toISOString();
+  proposal.updatedAt = new Date().toISOString();
   proposal.status = proposal.status || 'draft';
-  proposals.push(proposal);
-  store.set('proposals', proposals);
+
+  // Evita duplicar caso o mesmo id já exista (mantém apenas a nova versão)
+  const filtered = proposals.filter((p) => p && p.id !== proposal.id);
+  filtered.push(proposal);
+
+  store.set('proposals', filtered);
   return proposal;
 });
 

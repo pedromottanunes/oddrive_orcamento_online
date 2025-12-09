@@ -174,6 +174,42 @@ const fallbackSteps = [
         });
 
         try {
+          // Re-hydrate uploads from IndexedDB (uploadCache) before sending
+          try {
+            if (proposalData && window.uploadCache?.hydrateUploads) {
+              await window.uploadCache.hydrateUploads(proposalData.uploads || {});
+            }
+          } catch (err) {
+            console.warn('[WebBridge] Falha ao re-hydrate uploads antes do envio', err);
+          }
+
+          // Debug: log uploads keys and whether planilha.data exists
+          try {
+            const keys = Object.keys(proposalData?.uploads || {});
+            const planilha = proposalData?.uploads?.['planilha'];
+            console.log('[WebBridge] Sending proposalData.uploads keys:', keys);
+
+            // If planilha exists but .data is empty, try to recover it from dataUrl
+            if (planilha && (!planilha.data || (typeof planilha.data === 'string' && planilha.data.length === 0)) && planilha.dataUrl) {
+              try {
+                const recovered = typeof planilha.dataUrl === 'string' ? planilha.dataUrl.split(',')[1] : null;
+                if (recovered) {
+                  planilha.data = recovered;
+                  planilha.size = recovered.length;
+                  console.warn('[WebBridge] planilha.data was empty — recovered from dataUrl, size=', planilha.size);
+                } else {
+                  console.warn('[WebBridge] planilha.data empty and dataUrl could not be parsed');
+                }
+              } catch (err) {
+                console.warn('[WebBridge] Falha ao recuperar planilha.data a partir de dataUrl', err);
+              }
+            }
+
+            console.log('[WebBridge] planilha present?', !!planilha, 'data length:', planilha?.data?.length || 0);
+          } catch (err) {
+            console.warn('[WebBridge] Falha ao logar uploads antes do envio', err);
+          }
+
           const response = await request('/slides/generate', {
             method: 'POST',
             body: { proposalData, options }

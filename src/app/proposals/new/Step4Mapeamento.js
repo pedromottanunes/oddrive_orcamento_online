@@ -77,7 +77,26 @@ function getDraftPayload() {
 
 function persistDraft() {
   const payload = getDraftPayload();
-  localStorage.setItem('wizard_draft', JSON.stringify(payload));
+  try {
+    localStorage.setItem('wizard_draft', JSON.stringify(payload));
+  } catch (error) {
+    console.warn('[Step4Mapeamento] Falha ao salvar draft (quota). Tentando sem blobs pesados.', error);
+    // Fallback: remove todos os blobs antes de salvar
+    if (payload.uploads) {
+      Object.values(payload.uploads).forEach((upload) => {
+        if (!upload) return;
+        delete upload.data;
+        delete upload.dataUrl;
+        delete upload.previewUrl;
+      });
+    }
+    try {
+      localStorage.setItem('wizard_draft', JSON.stringify(payload));
+    } catch (err2) {
+      console.error('[Step4Mapeamento] Falha ao salvar draft mesmo após limpar blobs', err2);
+      notify?.warning?.('Limite de armazenamento', 'Não foi possível salvar o rascunho localmente. Continue gerando para não perder o progresso.');
+    }
+  }
 }
 
 // Carregar dados salvos
