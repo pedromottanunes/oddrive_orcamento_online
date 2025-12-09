@@ -66,7 +66,7 @@ O instalador será criado em `dist/OD Drive - Gerador de Orçamentos Setup.exe`.
 |------|---------------|
 | `Node.js não encontrado` | Instale via https://nodejs.org/ |
 | `npm install` falha | Verifique internet / rode `npm cache clean --force` |
-| OAuth abre página em branco | Confirme se o redirect de `.env` é `http://127.0.0.1:8080/api/google/callback` |
+| OAuth abre página em branco | Confirme se o redirect de `.env` é `http://127.0.0.1:8080/api/slides/oauth/callback` |
 | Export trava em 401 | Refazer a conexão na tela Configurações |
 
 ---

@@ -1,14 +1,43 @@
-# Node/Electron build artifacts
+# Dependencies
 node_modules/
+package-lock.json
+
+# Build artifacts
 dist/
+dist-electron/
+out/
+build/
+
+# Runtime generated files
 tmp/
 data/
 *.log
+*.log.*
 
-# Env files / local configs
+# Environment & secrets
 .env
+.env.local
+.env.*.local
 PARAMETROS SECRETOS/
 
-# OS noise
+# OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Electron
+*.asar
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.AppImage

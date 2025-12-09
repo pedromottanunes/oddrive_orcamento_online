@@ -9,6 +9,8 @@ const DEFAULT_SCOPES = [
   'https://www.googleapis.com/auth/presentations',
   'https://www.googleapis.com/auth/drive'
 ];
+const DEFAULT_REDIRECT_PATH = '/api/slides/oauth/callback';
+const DEFAULT_REDIRECT_URI = `http://127.0.0.1:8080${DEFAULT_REDIRECT_PATH}`;
 
 class GoogleOAuthManager {
   constructor(store, configProvider = null) {
@@ -16,7 +18,8 @@ class GoogleOAuthManager {
     this.configProvider = typeof configProvider === 'function' ? configProvider : null;
     this.clientId = process.env.GOOGLE_CLIENT_ID || '';
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://127.0.0.1:8080/api/google/callback';
+    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || DEFAULT_REDIRECT_URI;
+    this.redirectPath = DEFAULT_REDIRECT_PATH;
     this.port = parseInt(process.env.PORT || '8080', 10);
     this.codeVerifier = null;
     this.server = null;
@@ -29,14 +32,19 @@ class GoogleOAuthManager {
       this.clientId = fromConfig.clientId || this.clientId;
       this.clientSecret = fromConfig.clientSecret || this.clientSecret;
       this.redirectUri = fromConfig.redirectUri || this.redirectUri;
-      try {
-        const redirectUrl = new URL(this.redirectUri);
-        this.port = redirectUrl.port
-          ? parseInt(redirectUrl.port, 10)
-          : this.port;
-      } catch (error) {
-        // Mantém porta anterior se URL inválida
-      }
+    }
+    this.updateRedirectMetadata();
+  }
+
+  updateRedirectMetadata() {
+    try {
+      const redirectUrl = new URL(this.redirectUri || DEFAULT_REDIRECT_URI);
+      this.redirectPath = redirectUrl.pathname || DEFAULT_REDIRECT_PATH;
+      this.port = redirectUrl.port
+        ? parseInt(redirectUrl.port, 10)
+        : this.port;
+    } catch (error) {
+      this.redirectPath = DEFAULT_REDIRECT_PATH;
     }
   }
 
@@ -71,7 +79,7 @@ class GoogleOAuthManager {
       this.server = http.createServer(async (req, res) => {
         const url = new URL(req.url, `http://127.0.0.1:${this.port}`);
 
-        if (url.pathname === '/api/google/callback') {
+        if (url.pathname === this.redirectPath) {
           const code = url.searchParams.get('code');
           const error = url.searchParams.get('error');
 

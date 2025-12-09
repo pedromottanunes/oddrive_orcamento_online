@@ -36,7 +36,7 @@
 
 `src/lib/google/` contém quatro responsabilidades:
 
-1. **oauth-manager.js** – fluxo OAuth com PKCE + servidor local (`/api/google/callback`)
+1. **oauth-manager.js** – fluxo OAuth com PKCE + servidor local (`/api/slides/oauth/callback`)
 2. **client.js** – chamadas REST (Drive copy/upload/permissions + Slides batchUpdate/export)
 3. **placeholders.js** – lista de tokens (`{{logo_anunciante}}`, etc.)
 4. **generator.js** – pipeline completo (copiar template → enviar imagens → substituir placeholders → exportar PDF)
@@ -62,6 +62,6 @@ Tokens e IDs necessários vêm das variáveis definidas no `.env`.
 
 ## Observações
 
-- O `GOOGLE_REDIRECT_URI` precisa usar IP (ex.: `http://127.0.0.1:8080/api/google/callback`).
+- O `GOOGLE_REDIRECT_URI` precisa usar IP (ex.: `http://127.0.0.1:8080/api/slides/oauth/callback`).
 - Para uso em produção, crie uma pasta específica no Drive para armazenar cópias do template e outra para os assets.
 - Novos placeholders devem ser adicionados em `placeholders.js` e inseridos no template como `{{token}}`.

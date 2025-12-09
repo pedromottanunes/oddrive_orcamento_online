@@ -28,25 +28,106 @@ const BASE_SLOTS = [
   { id: 'planilha', label: 'Planilha de Or?amento', icon: '?Y"S', required: false } // Opcional se modo editar
 ];
 
+const EXTERNAL_PRODUCT_IDS = ['od-vt', 'od-drop', 'od-pack', 'od-full'];
+
+const PLACEHOLDER_IMAGES = {
+  logo: '../../../assets/upload-placeholders/logo-placeholder.png',
+  'mock-lateral': '../../../assets/upload-placeholders/mock-lateral-placeholder.png',
+  'mock-mapa': '../../../assets/upload-placeholders/mock-frontal-placeholder.png',
+  'mock-traseiro': '../../../assets/upload-placeholders/mock-traseiro-placeholder.png',
+  odim: '../../../assets/upload-placeholders/od-in-placeholder.png',
+  planilha: '../../../assets/upload-placeholders/planilha-placeholder.png',
+  productDefault: '../../../assets/upload-placeholders/product-placeholder.svg'
+};
+
 let totalSlots = BASE_SLOTS.length;
 
+function getPlaceholderForSlot(slotId) {
+  return PLACEHOLDER_IMAGES[slotId] || PLACEHOLDER_IMAGES.productDefault;
+}
+
+function setPlaceholderImage(card) {
+  if (!card) return;
+  if (!card.dataset.placeholder) {
+    card.dataset.placeholder = getPlaceholderForSlot(card.dataset.slot);
+  }
+  const preview = card.querySelector('.upload-card-preview');
+  if (preview) {
+    preview.src = card.dataset.placeholder;
+    preview.classList.add('placeholder');
+  }
+  card.classList.remove('has-file');
+  card.classList.add('using-placeholder');
+  const filename = card.querySelector('.upload-card-filename');
+  if (filename && !card.classList.contains('from-editor')) {
+    filename.textContent = '';
+  }
+}
+
+function clearPlaceholderImage(card) {
+  if (!card) return;
+  card.classList.remove('using-placeholder');
+  const preview = card.querySelector('.upload-card-preview');
+  if (preview) {
+    preview.classList.remove('placeholder');
+  }
+}
+
+function initializePlaceholders() {
+  document.querySelectorAll('.upload-card').forEach((card) => {
+    if (!card.dataset.placeholder) {
+      card.dataset.placeholder = getPlaceholderForSlot(card.dataset.slot);
+    }
+    setPlaceholderImage(card);
+  });
+}
+
+function getDraftPayload() {
+  if (window.uploadCache?.sanitizeProposalData) {
+    return window.uploadCache.sanitizeProposalData(proposalData);
+  }
+
+  const clone = JSON.parse(JSON.stringify(proposalData || {}));
+  if (clone.uploads) {
+    Object.keys(clone.uploads).forEach((slotId) => {
+      const entry = clone.uploads[slotId];
+      if (!entry) return;
+      delete entry.data;
+      delete entry.dataUrl;
+      delete entry.previewUrl;
+    });
+  }
+  return clone;
+}
+
+function persistDraft() {
+  const payload = getDraftPayload();
+  localStorage.setItem('wizard_draft', JSON.stringify(payload));
+}
+
 // Carregar dados salvos
-function loadDraftData() {
+async function loadDraftData() {
   const draft = localStorage.getItem('wizard_draft');
   if (draft) {
     try {
       proposalData = JSON.parse(draft);
-      
+      proposalData.produtosSelecionados = proposalData.produtosSelecionados || [];
+
       // Verificar se planilha já foi editada no Step3B
       if (proposalData.tipoPlanilha === 'editar' && proposalData.uploads?.['planilha']) {
         marcarPlanilhaCompleta();
       }
       
-      // Restaurar uploads
-      populateUploads();
     } catch (error) {
       console.error('Erro ao carregar rascunho:', error);
     }
+  }
+
+  proposalData.produtosSelecionados = proposalData.produtosSelecionados || [];
+  proposalData.uploads = proposalData.uploads || {};
+
+  if (window.uploadCache?.hydrateUploads) {
+    await window.uploadCache.hydrateUploads(proposalData.uploads);
   }
 }
 
@@ -54,6 +135,7 @@ function loadDraftData() {
 function marcarPlanilhaCompleta() {
   const cardPlanilha = document.querySelector('[data-slot="planilha"]');
   if (cardPlanilha) {
+    clearPlaceholderImage(cardPlanilha);
     cardPlanilha.classList.add('has-file', 'from-editor');
     
     const filename = cardPlanilha.querySelector('.upload-card-filename');
@@ -86,29 +168,54 @@ function marcarPlanilhaCompleta() {
 
 // Gerar slots para produtos selecionados
 function generateProductSlots() {
-  const produtos = proposalData.produtosSelecionados || [];
   const grid = document.getElementById('uploads-grid');
-  
-  produtos.forEach(produto => {
-    const slotId = `produto-${produto.id}`;
-    totalSlots++;
-    
+  if (!grid) return;
+
+  grid.querySelectorAll('.upload-card[data-product-slot="true"]').forEach((card) => card.remove());
+
+  const produtos = Array.isArray(proposalData.produtosSelecionados)
+    ? proposalData.produtosSelecionados
+    : [];
+
+  const uniqueProducts = [];
+
+  produtos.forEach((produto) => {
+    const productId =
+      typeof produto === 'string'
+        ? produto
+        : (produto && produto.id) || null;
+
+    if (!productId) return;
+    if (productId === 'od-in' || EXTERNAL_PRODUCT_IDS.includes(productId)) return;
+    if (uniqueProducts.includes(productId)) return;
+
+    uniqueProducts.push(productId);
+
+    const slotId = `produto-${productId}`;
+    const label =
+      (typeof produto === 'object' && produto?.name)
+        ? `Mock ${produto.name}`
+        : `Mock ${productId.toUpperCase()}`;
+
     const card = document.createElement('div');
     card.className = 'upload-card';
     card.dataset.slot = slotId;
+    card.dataset.productSlot = 'true';
+    card.dataset.placeholder = PLACEHOLDER_IMAGES.productDefault;
     card.innerHTML = `
-      <div class="upload-card-remove" title="Remover">×</div>
+      <div class="upload-card-remove" title="Remover">&times;</div>
       <img class="upload-card-preview" alt="Preview">
-      <div class="upload-card-icon">📦</div>
-      <div class="upload-card-label">Mockup ${produto.name}</div>
+      <div class="upload-card-icon"></div>
+      <div class="upload-card-label">${label}</div>
       <div class="upload-card-hint">PNG ou JPG</div>
       <div class="upload-card-filename"></div>
     `;
-    
+
+    setPlaceholderImage(card);
     grid.appendChild(card);
-  // Events will be attached once in DOMContentLoaded to avoid duplicate listeners
   });
-  
+
+  totalSlots = BASE_SLOTS.length + uniqueProducts.length;
   updateUploadInfo();
 }
 
@@ -128,6 +235,7 @@ function populateUploads() {
 
 // Exibir upload em um card
 function displayUpload(card, upload) {
+  clearPlaceholderImage(card);
   card.classList.add('has-file');
   
   const preview = card.querySelector('.upload-card-preview');
@@ -135,13 +243,14 @@ function displayUpload(card, upload) {
   
   // Prefer dataUrl (constructed from base64 data) for img.src
   if (preview) {
-    if (upload.dataUrl) {
-      preview.src = upload.dataUrl;
-    } else if (upload.base64) {
-      // legacy fallback
-      preview.src = `data:image/png;base64,${upload.base64}`;
-    } else if (upload.data) {
-      preview.src = `data:image/png;base64,${upload.data}`;
+    const previewSource =
+      upload.previewUrl ||
+      upload.dataUrl ||
+      (upload.base64 ? `data:image/png;base64,${upload.base64}` : null) ||
+      (upload.data ? `data:image/png;base64,${upload.data}` : null);
+    if (previewSource) {
+      preview.src = previewSource;
+      preview.classList.remove('placeholder');
     }
   }
   
@@ -165,31 +274,40 @@ async function selectFile(slotId) {
       properties: ['openFile']
     });
     
-    if (result && result.path) {
-      // Construir data URL a partir do base64 retornado (campo 'data' no main)
-      const fileName = result.name || '';
-      const ext = (fileName.split('.').pop() || '').toLowerCase();
-      const mimeMap = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', svg: 'svg+xml' };
-      const mime = mimeMap[ext] || 'png';
-      const dataBase64 = result.data || result.base64 || result.data || null;
-
-      const dataUrl = dataBase64 ? `data:image/${mime};base64,${dataBase64}` : null;
-
-      // Salvar upload
-      proposalData.uploads[slotId] = {
-        name: fileName,
-        path: result.path,
-        data: dataBase64,
-        dataUrl: dataUrl
-      };
-
-      // Atualizar UI
-      const card = document.querySelector(`[data-slot="${slotId}"]`);
-      displayUpload(card, proposalData.uploads[slotId]);
-
-      updateUploadInfo();
-      notify.success('Upload realizado', `${fileName} enviado com sucesso.`);
+    if (!result || result.canceled || !result.path) {
+      return;
     }
+
+    const fileName = result.name || '';
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
+    const mimeMap = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', svg: 'svg+xml' };
+    const mime = mimeMap[ext] || 'png';
+    const dataBase64 = result.data || result.base64 || null;
+    const dataUrl =
+      dataBase64 ? `data:image/${mime};base64,${dataBase64}` : result.dataUrl || null;
+
+    // Salvar upload
+    proposalData.uploads[slotId] = {
+      name: fileName,
+      path: result.path,
+      size: result.size || 0,
+      data: dataBase64,
+      dataUrl,
+      previewUrl: dataUrl
+    };
+
+    if (dataBase64 && window.uploadCache?.save) {
+      await window.uploadCache.save(slotId, { data: dataBase64, dataUrl });
+    }
+
+    // Atualizar UI
+    const card = document.querySelector(`[data-slot="${slotId}"]`);
+    if (card) {
+      displayUpload(card, proposalData.uploads[slotId]);
+    }
+
+    updateUploadInfo();
+    notify.success('Upload realizado', `${fileName} enviado com sucesso.`);
   } catch (error) {
     console.error('Erro ao selecionar arquivo:', error);
     notify.error('Erro', 'Não foi possível selecionar o arquivo.');
@@ -197,19 +315,29 @@ async function selectFile(slotId) {
 }
 
 // Remover upload
-function removeUpload(slotId) {
+async function removeUpload(slotId) {
   if (proposalData.uploads[slotId]) {
     delete proposalData.uploads[slotId];
-    
+
+    if (window.uploadCache?.remove) {
+      await window.uploadCache.remove(slotId);
+    }
+
     const card = document.querySelector(`[data-slot="${slotId}"]`);
-    card.classList.remove('has-file');
-    
-    const preview = card.querySelector('.upload-card-preview');
-    const filename = card.querySelector('.upload-card-filename');
-    
-    if (preview) preview.src = '';
-    if (filename) filename.textContent = '';
-    
+    if (card) {
+      const preview = card.querySelector('.upload-card-preview');
+      const filename = card.querySelector('.upload-card-filename');
+
+      if (preview) {
+        preview.removeAttribute('src');
+      }
+      if (filename && !card.classList.contains('from-editor')) {
+        filename.textContent = '';
+      }
+
+      setPlaceholderImage(card);
+    }
+
     updateUploadInfo();
     notify.info('Upload removido', 'Imagem removida com sucesso.');
   }
@@ -242,14 +370,14 @@ function setupCardEvents(card) {
 
 // Salvar rascunho
 function saveDraft() {
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  persistDraft();
   const count = Object.keys(proposalData.uploads || {}).length;
   notify.success('Rascunho salvo', `${count} imagem(ns) salva(s).`);
 }
 
 // Próxima etapa
 function nextStep() {
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  persistDraft();
   
   // Sempre ir para Step4 (Checagem)
   // A edição da planilha já aconteceu antes (Step2 → Step3B → Step3)
@@ -258,7 +386,7 @@ function nextStep() {
 
 // Voltar
 function goBack() {
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  persistDraft();
   window.location.href = 'Step2Produtos.html';
 }
 
@@ -271,32 +399,43 @@ function updateProgressBar() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  loadDraftData();
-  updateProgressBar();
-  
-  // Ocultar card de planilha se modo for "editar"
-  if (proposalData.tipoPlanilha === 'editar') {
-    const planilhaCard = document.querySelector('[data-slot="planilha"]');
-    if (planilhaCard) {
-      planilhaCard.style.display = 'none';
+  (async () => {
+    initializePlaceholders();
+    await loadDraftData();
+    generateProductSlots();
+    populateUploads();
+    updateProgressBar();
+
+    // Ocultar card de planilha se modo for "editar"
+    let planilhaOculta = false;
+    if (proposalData.tipoPlanilha === 'editar') {
+      const planilhaCard = document.querySelector('[data-slot="planilha"]');
+      if (planilhaCard) {
+        planilhaCard.style.display = 'none';
+        planilhaOculta = true;
+      }
     }
-  }
-  
-  // Configurar cards base
-  document.querySelectorAll('.upload-card').forEach(card => {
-    setupCardEvents(card);
-  });
-  
-  // Botões de navegação
-  document.getElementById('btn-next').addEventListener('click', nextStep);
-  document.getElementById('btn-save-draft').addEventListener('click', saveDraft);
-  document.getElementById('btn-back').addEventListener('click', goBack);
-  
-  // Atalhos de teclado
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      saveDraft();
+    if (planilhaOculta) {
+      totalSlots = Math.max(0, totalSlots - 1);
     }
-  });
+
+    // Configurar cards base
+    document.querySelectorAll('.upload-card').forEach(card => {
+      setupCardEvents(card);
+    });
+    updateUploadInfo();
+
+    // Botões de navegação
+    document.getElementById('btn-next').addEventListener('click', nextStep);
+    document.getElementById('btn-save-draft').addEventListener('click', saveDraft);
+    document.getElementById('btn-back').addEventListener('click', goBack);
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveDraft();
+      }
+    });
+  })();
 });

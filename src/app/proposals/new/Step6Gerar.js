@@ -46,11 +46,15 @@ function attachProgressListener() {
   });
 }
 
-function loadDraftData() {
+async function loadDraftData() {
   const draft = localStorage.getItem('wizard_draft');
   if (draft) {
     try {
       proposalData = JSON.parse(draft);
+      proposalData.uploads = proposalData.uploads || {};
+      if (window.uploadCache?.hydrateUploads) {
+        await window.uploadCache.hydrateUploads(proposalData.uploads);
+      }
       updateImpactMetrics();
     } catch (error) {
       console.error('Erro ao carregar rascunho:', error);
@@ -69,6 +73,21 @@ function updateImpactMetrics() {
 
 async function generatePresentation() {
   if (isGenerating) return;
+
+  if (!window.electronAPI?.slides?.generate) {
+    notify.error('Integração indisponível', 'Reinicie o aplicativo para restabelecer a comunicação com o Google Slides.');
+    return;
+  }
+
+  if (!proposalData || !proposalData.produtosSelecionados?.length) {
+    notify.warning('Dados incompletos', 'Finalize as etapas anteriores antes de gerar a apresentação.');
+    return;
+  }
+
+  if (!proposalData.uploads || !Object.keys(proposalData.uploads).length) {
+    notify.warning('Uploads obrigatórios', 'Envie as imagens na etapa de uploads antes de gerar.');
+    return;
+  }
 
   isGenerating = true;
   updateImpactMetrics();
@@ -166,24 +185,21 @@ async function generateFinalPdf() {
       throw new Error(response?.error || 'Falha ao exportar o PDF.');
     }
 
-    const saveResult = await window.electronAPI.files.save({
+    await window.electronAPI.files.save({
       data: response.base64,
       fileName: response.fileName
     });
 
-    if (!saveResult) {
-      notify.info('Operação cancelada', 'Seleção de local cancelada.');
-      return;
-    }
-
-    proposalData.generatedPdfPath = saveResult.path;
+    proposalData.generatedPdfPath = null;
+    proposalData.generatedPdfAvailable = true;
+    proposalData.generatedPdfFileName = response.fileName;
     proposalData.status = 'completed';
     proposalData.generatedAt = new Date().toISOString();
 
     await saveProposal({ silent: true });
     showPdfActions();
     ui.status().textContent = 'PDF salvo com sucesso.';
-    notify.success('PDF salvo', 'Arquivo salvo com sucesso.');
+    notify.success('PDF baixado', 'Arquivo salvo no seu dispositivo.');
   } catch (error) {
     console.error('Erro ao exportar PDF:', error);
     notify.error('Erro', error.message || 'Não foi possível exportar o PDF.');
@@ -219,6 +235,9 @@ async function saveProposal(options = {}) {
         proposalData.id = saved.id;
       }
       localStorage.removeItem('wizard_draft');
+      if (window.uploadCache?.clearAll) {
+        window.uploadCache.clearAll();
+      }
     }
 
     return saved;
@@ -230,48 +249,57 @@ async function saveProposal(options = {}) {
 
 async function openPDF() {
   try {
-    if (!proposalData.generatedPdfPath) {
-      notify.warning('Arquivo não encontrado', 'Gere e salve o PDF antes de abrir.');
+    if (!proposalData.googlePresentationId) {
+      notify.warning('Link indisponível', 'Gere a apresentação e exporte o PDF primeiro.');
       return;
     }
 
-    const result = await window.electronAPI.shell.openFile(proposalData.generatedPdfPath);
-    if (!result.success) {
-      notify.error('Erro', 'Não foi possível abrir o PDF: ' + result.error);
+    ui.status().textContent = 'Baixando PDF...';
+    const response = await window.electronAPI.slides.exportPdf(proposalData.googlePresentationId, proposalData.id);
+    if (!response?.success) {
+      throw new Error(response?.error || 'Não foi possível baixar o PDF.');
     }
+
+    await window.electronAPI.files.save({
+      data: response.base64,
+      fileName: response.fileName || proposalData.generatedPdfFileName || `proposta-${proposalData.id || Date.now()}.pdf`
+    });
+
+    notify.success('Download concluído', 'PDF baixado novamente.');
   } catch (error) {
-    console.error('Erro ao abrir PDF:', error);
-    notify.error('Erro', 'Não foi possível abrir o PDF.');
+    console.error('Erro ao baixar PDF:', error);
+    notify.error('Erro', error.message || 'Não foi possível baixar o PDF.');
+  } finally {
+    ui.status().textContent = '';
   }
 }
 
-async function openFolder() {
+function openFolder() {
   try {
-    const pdfPath = proposalData.generatedPdfPath;
-    if (!pdfPath) {
-      notify.warning('Arquivo não encontrado', 'Gere e salve o PDF antes de abrir a pasta.');
-      return;
-    }
-
-    const separatorIndex = Math.max(pdfPath.lastIndexOf('/'), pdfPath.lastIndexOf('\\'));
-    const folderPath = separatorIndex > -1 ? pdfPath.substring(0, separatorIndex) : pdfPath;
-    const result = await window.electronAPI.shell.openFolder(folderPath);
-    if (!result.success) {
-      notify.error('Erro', 'Não foi possível abrir a pasta: ' + result.error);
+    if (proposalData.googlePresentationUrl) {
+      window.open(proposalData.googlePresentationUrl, '_blank', 'noopener');
+    } else {
+      notify.warning('Link indisponível', 'Gere a apresentação primeiro.');
     }
   } catch (error) {
-    console.error('Erro ao abrir pasta:', error);
-    notify.error('Erro', 'Não foi possível abrir a pasta.');
+    console.error('Erro ao abrir apresentação:', error);
+    notify.error('Erro', 'Não foi possível abrir o Google Slides.');
   }
 }
 
 function newProposal() {
   localStorage.removeItem('wizard_draft');
+  if (window.uploadCache?.clearAll) {
+    window.uploadCache.clearAll();
+  }
   window.location.href = 'Step1Dados.html';
 }
 
 function finish() {
   localStorage.removeItem('wizard_draft');
+  if (window.uploadCache?.clearAll) {
+    window.uploadCache.clearAll();
+  }
   window.location.href = '../../index.html';
 }
 
@@ -285,22 +313,24 @@ function updateProgressBar() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadDraftData();
-  updateProgressBar();
-  attachProgressListener();
+  (async () => {
+    await loadDraftData();
+    updateProgressBar();
+    attachProgressListener();
 
-  document.getElementById('btn-generate').addEventListener('click', generatePresentation);
-  document.getElementById('btn-generate-pdf').addEventListener('click', generateFinalPdf);
-  document.getElementById('btn-open-pdf').addEventListener('click', openPDF);
-  document.getElementById('btn-open-folder').addEventListener('click', openFolder);
-  document.getElementById('btn-new-proposal').addEventListener('click', newProposal);
+    document.getElementById('btn-generate').addEventListener('click', generatePresentation);
+    document.getElementById('btn-generate-pdf').addEventListener('click', generateFinalPdf);
+    document.getElementById('btn-open-pdf').addEventListener('click', openPDF);
+    document.getElementById('btn-open-folder').addEventListener('click', openFolder);
+    document.getElementById('btn-new-proposal').addEventListener('click', newProposal);
 
-  document.getElementById('btn-back').addEventListener('click', goBack);
-  document.getElementById('btn-finish').addEventListener('click', finish);
+    document.getElementById('btn-back').addEventListener('click', goBack);
+    document.getElementById('btn-finish').addEventListener('click', finish);
 
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'Enter' && !isGenerating) {
-      generatePresentation();
-    }
-  });
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter' && !isGenerating) {
+        generatePresentation();
+      }
+    });
+  })();
 });

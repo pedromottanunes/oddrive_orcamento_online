@@ -1,6 +1,26 @@
 // ===== WIZARD STATE =====
 let proposalData = {};
 
+function getPersistableDraft() {
+  if (window.uploadCache?.sanitizeProposalData) {
+    return window.uploadCache.sanitizeProposalData(proposalData);
+  }
+
+  const clone = JSON.parse(JSON.stringify(proposalData || {}));
+  if (clone.uploads) {
+    Object.keys(clone.uploads).forEach((slotId) => {
+      const entry = clone.uploads[slotId];
+      if (!entry) return;
+      delete entry.data;
+      delete entry.dataUrl;
+      delete entry.previewUrl;
+    });
+  }
+
+  return clone;
+}
+
+
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
   loadDraftData();
@@ -358,7 +378,7 @@ async function capturarEContinuar() {
     };
     
     // Salvar todo o estado
-    localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+    localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
     
     showNotification('✅ Planilha capturada com sucesso!', 'success');
     
@@ -377,7 +397,7 @@ async function capturarEContinuar() {
 function salvarRascunho() {
   try {
     // Já salvamos proposalData no localStorage automaticamente
-    localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+    localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
     showNotification('💾 Rascunho salvo com sucesso!', 'success');
   } catch (error) {
     console.error('❌ Erro ao salvar rascunho:', error);

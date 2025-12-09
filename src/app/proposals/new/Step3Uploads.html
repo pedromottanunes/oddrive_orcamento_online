@@ -265,10 +265,22 @@
       border-radius: 8px;
       margin-bottom: 12px;
       display: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .upload-card-preview.placeholder {
+      display: block;
+      opacity: 0.55;
+      object-fit: contain;
     }
 
     .upload-card.has-file .upload-card-preview {
       display: block;
+      opacity: 1;
+    }
+
+    .upload-card.using-placeholder .upload-card-icon {
+      display: none;
     }
 
     .upload-card.has-file .upload-card-icon {
@@ -384,7 +396,11 @@
       </div>
 
       <div class="uploads-grid" id="uploads-grid">
-        <div class="upload-card" data-slot="logo">
+        <div
+          class="upload-card"
+          data-slot="logo"
+          data-placeholder="../../../assets/upload-placeholders/logo-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon"></div>
@@ -393,7 +409,11 @@
           <div class="upload-card-filename"></div>
         </div>
 
-        <div class="upload-card" data-slot="mock-lateral">
+        <div
+          class="upload-card"
+          data-slot="mock-lateral"
+          data-placeholder="../../../assets/upload-placeholders/mock-lateral-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon"></div>
@@ -402,7 +422,11 @@
           <div class="upload-card-filename"></div>
         </div>
 
-        <div class="upload-card" data-slot="mock-mapa">
+        <div
+          class="upload-card"
+          data-slot="mock-mapa"
+          data-placeholder="../../../assets/upload-placeholders/mock-frontal-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon">️</div>
@@ -411,7 +435,11 @@
           <div class="upload-card-filename"></div>
         </div>
 
-        <div class="upload-card" data-slot="odim">
+        <div
+          class="upload-card"
+          data-slot="odim"
+          data-placeholder="../../../assets/upload-placeholders/od-in-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon">️</div>
@@ -420,7 +448,11 @@
           <div class="upload-card-filename"></div>
         </div>
 
-        <div class="upload-card" data-slot="mock-traseiro">
+        <div
+          class="upload-card"
+          data-slot="mock-traseiro"
+          data-placeholder="../../../assets/upload-placeholders/mock-traseiro-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon"></div>
@@ -429,7 +461,11 @@
           <div class="upload-card-filename"></div>
         </div>
 
-        <div class="upload-card" data-slot="planilha">
+        <div
+          class="upload-card"
+          data-slot="planilha"
+          data-placeholder="../../../assets/upload-placeholders/planilha-placeholder.png"
+        >
           <div class="upload-card-remove" title="Remover"></div>
           <img class="upload-card-preview" alt="Preview">
           <div class="upload-card-icon"></div>
@@ -453,7 +489,9 @@
     </div>
   </div>
 
-  <script src="../../lib/notifications.js"></script>
+  <script src="../../../shared/web-bridge.js"></script>
+  <script src="../../../shared/upload-cache.js"></script>
+  <script src="../../../lib/notifications.js"></script>
   <script src="Step3Uploads.js"></script>
 </body>
 </html>

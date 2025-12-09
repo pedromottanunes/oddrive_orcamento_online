@@ -22,6 +22,25 @@ let proposalData = {
 let isEditMode = false;
 let editingProposalId = null;
 
+function getPersistableDraft() {
+  if (window.uploadCache?.sanitizeProposalData) {
+    return window.uploadCache.sanitizeProposalData(proposalData);
+  }
+
+  const clone = JSON.parse(JSON.stringify(proposalData || {}));
+  if (clone.uploads) {
+    Object.keys(clone.uploads).forEach((slotId) => {
+      const entry = clone.uploads[slotId];
+      if (!entry) return;
+      delete entry.data;
+      delete entry.dataUrl;
+      delete entry.previewUrl;
+    });
+  }
+
+  return clone;
+}
+
 // Carregar dados salvos (se existir)
 async function loadDraftData() {
   // Verificar se está em modo de edição
@@ -199,7 +218,7 @@ function updateImpactMetrics() {
 // Salvar rascunho
 function saveDraft() {
   collectFormData();
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
   notify.success('Rascunho salvo', 'Seus dados foram salvos localmente.');
 }
 
@@ -211,7 +230,7 @@ function nextStep() {
   }
   
   collectFormData();
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
   
   // Navegar para próxima etapa
   window.location.href = 'Step2Produtos.html';

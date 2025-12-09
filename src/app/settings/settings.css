@@ -1,3 +1,8 @@
+body.settings-page {
+  overflow-y: auto;
+  background: #f6f7f8;
+}
+
 .settings-container {
   min-height: 100vh;
   background: #f6f7f8;

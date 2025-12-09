@@ -33,6 +33,25 @@ let proposalData = {
 
 let selectedProducts = [];
 
+function getPersistableDraft() {
+  if (window.uploadCache?.sanitizeProposalData) {
+    return window.uploadCache.sanitizeProposalData(proposalData);
+  }
+
+  const clone = JSON.parse(JSON.stringify(proposalData || {}));
+  if (clone.uploads) {
+    Object.keys(clone.uploads).forEach((slotId) => {
+      const entry = clone.uploads[slotId];
+      if (!entry) return;
+      delete entry.data;
+      delete entry.dataUrl;
+      delete entry.previewUrl;
+    });
+  }
+
+  return clone;
+}
+
 // Carregar dados salvos
 function loadDraftData() {
   const draft = localStorage.getItem('wizard_draft');
@@ -180,7 +199,7 @@ function normalizeSelection(selection) {
 // Salvar rascunho
 function saveDraft() {
   saveSelection();
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
   notify.success('Rascunho salvo', `${selectedProducts.length} produto(s) selecionado(s).`);
 }
 
@@ -192,7 +211,7 @@ function nextStep() {
   }
 
   saveSelection();
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
   
   // Verificar tipo de planilha escolhido no Step1
   if (proposalData.tipoPlanilha === 'editar') {
@@ -207,7 +226,7 @@ function nextStep() {
 // Voltar
 function goBack() {
   saveSelection();
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  localStorage.setItem('wizard_draft', JSON.stringify(getPersistableDraft()));
   window.location.href = 'Step1Dados.html';
 }
 

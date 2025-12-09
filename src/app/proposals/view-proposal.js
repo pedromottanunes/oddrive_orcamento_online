@@ -47,8 +47,9 @@ function renderProposal() {
   const proposal = currentProposal;
   
   // Header
-  const statusText = proposal.status === 'generated' ? 'Gerado' : 'Rascunho';
-  const statusClass = proposal.status === 'generated' ? 'status-generated' : 'status-draft';
+  const isGenerated = proposal.status === 'generated' || proposal.status === 'completed';
+  const statusText = isGenerated ? 'Gerado' : 'Rascunho';
+  const statusClass = isGenerated ? 'status-generated' : 'status-draft';
   
   document.getElementById('proposal-title').textContent = 
     `Proposta — ${proposal.cliente?.nomeAnunciante || 'Sem nome'}`;
@@ -64,7 +65,7 @@ function renderProposal() {
     `Criado em: ${createdDate} • Última atualização: ${updatedDate}`;
   
   // Mostrar botão de download apenas se a proposta foi gerada
-  if (proposal.status === 'generated') {
+  if (isGenerated) {
     document.getElementById('btn-download').style.display = 'inline-flex';
   }
   
@@ -100,35 +101,49 @@ function renderProposal() {
   
   // Produtos Selecionados
   const produtosList = document.getElementById('produtos-list');
+  const productLabelMap = new Map();
   if (proposal.produtosSelecionados && proposal.produtosSelecionados.length > 0) {
     produtosList.innerHTML = '';
-    proposal.produtosSelecionados.forEach(produto => {
+    proposal.produtosSelecionados.forEach((produto) => {
+      const label = resolveProductLabel(produto);
+      if (produto?.id) {
+        productLabelMap.set(produto.id, label);
+      } else if (typeof produto === 'string') {
+        productLabelMap.set(produto, label);
+      }
+
       const chip = document.createElement('div');
       chip.className = 'produto-chip';
-      chip.textContent = produto;
+      chip.textContent = label;
       produtosList.appendChild(chip);
     });
   } else {
     produtosList.innerHTML = '<div class="data-value empty">Nenhum produto selecionado</div>';
   }
-  
+
   // Uploads
   const uploadsGrid = document.getElementById('uploads-grid');
   if (proposal.uploads && Object.keys(proposal.uploads).length > 0) {
     uploadsGrid.innerHTML = '';
-    
+
     for (const [key, file] of Object.entries(proposal.uploads)) {
       const uploadItem = document.createElement('div');
       uploadItem.className = 'upload-item';
-      
-      const label = getUploadLabel(key);
-      
+
+      const label = getUploadLabel(key, productLabelMap);
+      const previewSrc =
+        file?.previewUrl ||
+        file?.dataUrl ||
+        (file?.data ? `data:image/png;base64,${file.data}` : null);
+
       uploadItem.innerHTML = `
-        <div class="upload-thumbnail">🖼️</div>
-        <div class="upload-name">${file.name || 'arquivo'}</div>
+        <div class="upload-thumbnail">
+          ${previewSrc ? `<img src="${previewSrc}" alt="${label}" />` : '🖼️'}
+        </div>
+        <div class="upload-name">${file?.name || 'arquivo'}</div>
         <div class="upload-label">${label}</div>
       `;
-      
+
       uploadsGrid.appendChild(uploadItem);
     }
   } else {
@@ -137,9 +152,10 @@ function renderProposal() {
 }
 
 // Obter label amigável para os uploads
-function getUploadLabel(key) {
+function getUploadLabel(key, productLabelMap = new Map()) {
   const labels = {
     'logoMarcaAnunciante': 'Logo do Anunciante',
+    'logo': 'Logo do Anunciante',
     'imagemRede': 'Imagem da Rede',
     'imagemEstabelecimento': 'Imagem do Estabelecimento',
     'imagemProduto1': 'Produto 1',
@@ -147,10 +163,30 @@ function getUploadLabel(key) {
     'imagemProduto3': 'Produto 3',
     'imagemProduto4': 'Produto 4',
     'imagemProduto5': 'Produto 5',
-    'imagemProduto6': 'Produto 6'
+    'imagemProduto6': 'Produto 6',
+    'mock-lateral': 'Mock Lateral',
+    'mock-mapa': 'Mock Frontal',
+    'mock-traseiro': 'Mock Traseiro',
+    'odim': 'OD IN',
+    'planilha': 'Planilha de Orçamento'
   };
-  
+
+  if (labels[key]) {
+    return labels[key];
+  }
+
+  if (key?.startsWith('produto-')) {
+    const productId = key.replace('produto-', '');
+    return productLabelMap.get(productId) || `Mockup ${productId}`;
+  }
+
   return labels[key] || key;
+}
+
+function resolveProductLabel(produto) {
+  if (!produto) return '-';
+  if (typeof produto === 'string') return produto;
+  return produto.name || produto.label || produto.id || 'Produto';
 }
 
 // Editar proposta
@@ -162,12 +198,41 @@ function editProposal() {
 
 // Baixar proposta (PDF)
 async function downloadProposal() {
-  notify.info('Em desenvolvimento', 'A integração com Google Slides para exportar PDF será implementada em breve.');
+  if (!currentProposal?.googlePresentationId) {
+    notify.warning('PDF indisponível', 'Gere a proposta no Google Slides antes de baixar.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-download');
+  btn.disabled = true;
+  btn.textContent = 'Baixando...';
+
+  try {
+    const response = await window.electronAPI.slides.exportPdf(currentProposal.googlePresentationId, currentProposal.id);
+    if (!response?.success) {
+      throw new Error(response?.error || 'Falha ao exportar o PDF.');
+    }
+
+    await window.electronAPI.files.save({
+      data: response.base64,
+      fileName: response.fileName || `proposta-${currentProposal.id || Date.now()}.pdf`
+    });
+
+    notify.success('Download concluído', 'PDF baixado com sucesso.');
+  } catch (error) {
+    console.error('Erro ao baixar PDF:', error);
+    notify.error('Erro', error.message || 'Não foi possível baixar o PDF.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Baixar PDF';
+  }
 }
+
+// Excluir proposta}
 
 // Excluir proposta
 async function deleteProposal() {
-  const confirmed = await modal.confirm(
+  const confirmed = await legacyModal.confirm(
     'Excluir Proposta',
     'Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita.'
   );
@@ -190,8 +255,11 @@ function goBack() {
 }
 
 // Modal helper (simples)
-const modal = {
+const legacyModal = {
   confirm: async (title, message) => {
+    if (window.modal?.confirm) {
+      return window.modal.confirm(title, message);
+    }
     return confirm(`${title}\n\n${message}`);
   }
 };
@@ -202,3 +270,5 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+window.goBack = goBack;

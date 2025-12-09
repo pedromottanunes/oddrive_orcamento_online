@@ -33,6 +33,7 @@ const PUBLIC_SHARE_FIELD = 'publicShare';
 
 let tokenInfo = null;
 let storedGoogleConfig = {};
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function init() {
   btnBack.addEventListener('click', () => (window.location.href = '../index.html'));
@@ -96,21 +97,28 @@ async function checkStatus() {
 async function connectSlides() {
   try {
     btnConnect.disabled = true;
-    btnConnect.textContent = '🌀 Conectando...';
-    statusText.textContent = '🌀 Abrindo navegador...';
+    btnConnect.textContent = 'Conectando...';
+    statusText.textContent = 'Abrindo navegador...';
 
     const result = await window.electronAPI.slides.startOAuth();
-    if (result?.success) {
-      alert('✔️ Conectado ao Google Slides com sucesso!');
-      await checkStatus();
+    if (!result?.authUrl) {
+      throw new Error(result?.error || 'Não foi possível iniciar o fluxo de autorização.');
+    }
+
+    window.open(result.authUrl, '_blank', 'noopener');
+    statusText.textContent = 'Autorize no navegador e aguarde...';
+    const connected = await waitForAuthorization();
+
+    if (connected) {
+      alert('Conectado ao Google Slides com sucesso!');
     } else {
-      alert('⚠️ Não foi possível conectar.\n\n' + (result?.error || 'Erro desconhecido'));
+      alert('Finalize a autorização no navegador e tente novamente.');
     }
   } catch (error) {
-    alert('⚠️ Erro ao conectar:\n\n' + error.message);
+    alert('Erro ao conectar:\n\n' + error.message);
   } finally {
     btnConnect.disabled = false;
-    btnConnect.textContent = '🔗 Conectar com Google Slides';
+    btnConnect.textContent = 'Conectar com Google Slides';
   }
 }
 
@@ -133,20 +141,32 @@ async function disconnectSlides() {
 async function refreshToken() {
   try {
     btnRefresh.disabled = true;
-    btnRefresh.textContent = '🌀 Renovando...';
-    const result = await window.electronAPI.slides.startOAuth();
-    if (result?.success) {
-      alert('✔️ Token renovado.');
-      await checkStatus();
-    } else {
-      alert('⚠️ Erro ao renovar token:\n\n' + (result?.error || 'Erro desconhecido'));
+    btnRefresh.textContent = 'Renovando...';
+    const result = await window.electronAPI.slides.refreshToken();
+    if (!result?.success) {
+      throw new Error(result?.error || 'Erro desconhecido.');
     }
+
+    alert('Token renovado com sucesso.');
+    await checkStatus();
   } catch (error) {
-    alert('⚠️ Erro ao renovar token:\n\n' + error.message);
+    alert('Erro ao renovar token:\n\n' + error.message);
   } finally {
     btnRefresh.disabled = false;
-    btnRefresh.textContent = '🌀 Renovar Token';
+    btnRefresh.textContent = 'Renovar Token';
   }
+}
+
+async function waitForAuthorization(timeoutMs = 60000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    await delay(2000);
+    await checkStatus();
+    if (tokenInfo?.accessToken) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function loadGoogleConfigForm() {

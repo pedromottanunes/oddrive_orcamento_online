@@ -231,6 +231,14 @@
       align-items: center;
       justify-content: center;
       font-size: 36px;
+      overflow: hidden;
+    }
+
+    .upload-thumbnail img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
     }
     
     .upload-name {
@@ -335,7 +343,8 @@
     </div>
   </div>
   
-  <script src="../../../lib/notifications.js"></script>
+  <script src="../../shared/web-bridge.js"></script>
+  <script src="../../lib/notifications.js"></script>
   <script src="view-proposal.js"></script>
 </body>
 </html>

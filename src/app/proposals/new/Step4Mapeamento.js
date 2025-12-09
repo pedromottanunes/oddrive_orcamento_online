@@ -58,12 +58,38 @@ const REQUIREMENTS = [
 
 let validationResults = [];
 
+function getDraftPayload() {
+  if (window.uploadCache?.sanitizeProposalData) {
+    return window.uploadCache.sanitizeProposalData(proposalData);
+  }
+
+  const clone = JSON.parse(JSON.stringify(proposalData || {}));
+  if (clone.uploads) {
+    Object.values(clone.uploads).forEach((upload) => {
+      if (!upload) return;
+      delete upload.data;
+      delete upload.dataUrl;
+      delete upload.previewUrl;
+    });
+  }
+  return clone;
+}
+
+function persistDraft() {
+  const payload = getDraftPayload();
+  localStorage.setItem('wizard_draft', JSON.stringify(payload));
+}
+
 // Carregar dados salvos
-function loadDraftData() {
+async function loadDraftData() {
   const draft = localStorage.getItem('wizard_draft');
   if (draft) {
     try {
       proposalData = JSON.parse(draft);
+      proposalData.uploads = proposalData.uploads || {};
+      if (window.uploadCache?.hydrateUploads) {
+        await window.uploadCache.hydrateUploads(proposalData.uploads);
+      }
       runValidation();
     } catch (error) {
       console.error('Erro ao carregar rascunho:', error);
@@ -139,26 +165,26 @@ function updateStatus() {
 
 // Salvar rascunho
 function saveDraft() {
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  persistDraft();
   notify.success('Rascunho salvo', 'Dados salvos com sucesso.');
 }
 
 // Próxima etapa
 function nextStep() {
   const allValid = validationResults.every(r => r.valid);
-  
+
   if (!allValid) {
     notify.warning('Requisitos pendentes', 'Complete todos os requisitos antes de prosseguir.');
     return;
   }
-  
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+
+  persistDraft();
   window.location.href = 'Step6Gerar.html';
 }
 
 // Voltar
 function goBack() {
-  localStorage.setItem('wizard_draft', JSON.stringify(proposalData));
+  persistDraft();
   window.location.href = 'Step3Uploads.html';
 }
 
@@ -171,19 +197,21 @@ function updateProgressBar() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  loadDraftData();
-  updateProgressBar();
-  
-  // Botões de navegação
-  document.getElementById('btn-next').addEventListener('click', nextStep);
-  document.getElementById('btn-save-draft').addEventListener('click', saveDraft);
-  document.getElementById('btn-back').addEventListener('click', goBack);
-  
-  // Atalhos de teclado
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      saveDraft();
-    }
-  });
+  (async () => {
+    await loadDraftData();
+    updateProgressBar();
+
+    // Botões de navegação
+    document.getElementById('btn-next').addEventListener('click', nextStep);
+    document.getElementById('btn-save-draft').addEventListener('click', saveDraft);
+    document.getElementById('btn-back').addEventListener('click', goBack);
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveDraft();
+      }
+    });
+  })();
 });
