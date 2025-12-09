@@ -232,6 +232,31 @@ npm install express express-session passport passport-google-oauth20
 # (Ver documentação em docs/deploy-web.md para guia completo)
 ```
 
+
+### Deploy on Render
+
+1. Go to https://render.com and sign in with your GitHub account.
+2. Click "New" → "Web Service".
+3. Select the repository: `pedromottanunes/oddrive_orcamento_online` and branch `main`.
+4. Render will auto-detect a Node.js project. Use the following settings if prompted:
+    - Build Command: `npm install`
+    - Start Command: `npm start`
+5. Add the required environment variables (see list below) in Render's dashboard under the service settings.
+6. Deploy — Render will build and start the `server/index.js` web service.
+
+Notes:
+- The project includes a `render.yaml` manifest to speed up creation of the Web Service.
+- Keep your Google OAuth client secret and other sensitive values in Render's environment variables (do not commit them to the repo).
+
+Environment variables required (set these in Render):
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI` (if used; for PKCE the app uses the server callback URL)
+- `GOOGLE_DRIVE_ASSETS_FOLDER_ID` (folder where uploads are stored)
+- `EXPORTS_PATH` (optional; default `./tmp/exports`)
+- Any other variables referenced in your local `.env`
+
 ### Deploy via Docker (Opcional)
 
 ```dockerfile
